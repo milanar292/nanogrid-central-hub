@@ -102,62 +102,75 @@ function App() {
 
       {mode === 'manual' && (
         <>
-          <p>Enter each house's generation, demand, battery availability, and cost.</p>
+          <p className="subtitle">Enter each house's generation, demand, battery availability, and cost.</p>
 
           <div className="house-grid">
             {houses.map((house, index) => {
               const result = resultFor(house.id)
               return (
                 <div key={house.id} className="house-card">
-                  <h2>{house.id}</h2>
+                  <div className="house-card-header">
+                    <h2>{house.id}</h2>
+                  </div>
 
-                  <label>
-                    P_G (W)
-                    <input
-                      type="number"
-                      value={house.P_G}
-                      onChange={(e) => updateHouse(index, 'P_G', e.target.value)}
-                    />
-                  </label>
+                  <div className="house-inputs">
+                    <label>
+                      P_G (W)
+                      <input
+                        type="number"
+                        value={house.P_G}
+                        onChange={(e) => updateHouse(index, 'P_G', e.target.value)}
+                      />
+                    </label>
 
-                  <label>
-                    P_D (W)
-                    <input
-                      type="number"
-                      value={house.P_D}
-                      onChange={(e) => updateHouse(index, 'P_D', e.target.value)}
-                    />
-                  </label>
+                    <label>
+                      P_D (W)
+                      <input
+                        type="number"
+                        value={house.P_D}
+                        onChange={(e) => updateHouse(index, 'P_D', e.target.value)}
+                      />
+                    </label>
 
-                  <label>
-                    P_avail (W)
-                    <input
-                      type="number"
-                      value={house.P_avail}
-                      onChange={(e) => updateHouse(index, 'P_avail', e.target.value)}
-                    />
-                  </label>
+                    <label>
+                      P_avail (W)
+                      <input
+                        type="number"
+                        value={house.P_avail}
+                        onChange={(e) => updateHouse(index, 'P_avail', e.target.value)}
+                      />
+                    </label>
 
-                  <label>
-                    Cost (C)
-                    <input
-                      type="number"
-                      step="0.01"
-                      value={house.C}
-                      onChange={(e) => updateHouse(index, 'C', e.target.value)}
-                    />
-                  </label>
+                    <label>
+                      Cost (C)
+                      <input
+                        type="number"
+                        step="0.01"
+                        value={house.C}
+                        onChange={(e) => updateHouse(index, 'C', e.target.value)}
+                      />
+                    </label>
+                  </div>
 
                   {result && (
                     <div className="house-result">
-                      <div>Surplus: {result.P_surplus.toFixed(2)} W</div>
-                      <div>Allocated: {result.P_alloc.toFixed(2)} W</div>
+                      <div>
+                        <span className="result-label">Surplus</span>
+                        <span className="result-val">{result.P_surplus.toFixed(2)} W</span>
+                      </div>
+                      <div>
+                        <span className="result-label">Allocated</span>
+                        <span className="result-val">{result.P_alloc.toFixed(2)} W</span>
+                      </div>
                       {result.P_surplus > 0 ? (
                         <div className="deficit-moot">
                           Local deficit: {result.P_local_deficit.toFixed(2)} W (moot — surplus covers demand, battery not used)
                         </div>
                       ) : (
-                        <div>Local deficit: {result.P_local_deficit.toFixed(2)} W</div>
+                        <div>
+                          <span className="result-label">Local deficit</span>
+                          <span className="result-val">{result.P_local_deficit.toFixed(2)} W</span>
+                        </div>
                       )}
                     </div>
                   )}
@@ -176,10 +189,15 @@ function App() {
 
       {mode === 'live' && (
         <>
-          <p>
-            Showing real data reported by House Arduinos. Refreshing every 3 seconds.
-            {lastUpdated && ` Last updated: ${lastUpdated.toLocaleTimeString()}`}
-          </p>
+          <div className="live-meta">
+            <span className={liveReported.length >= 4 ? 'status-dot live' : 'status-dot'} />
+            <p className="subtitle">
+              Showing real data reported by House Arduinos. Refreshing every 3 seconds.
+              {lastUpdated && (
+                <span className="timestamp">Last updated: {lastUpdated.toLocaleTimeString()}</span>
+              )}
+            </p>
+          </div>
 
           {liveError && <p className="error">Error: {liveError}</p>}
 
@@ -191,29 +209,53 @@ function App() {
 
               return (
                 <div key={id} className="house-card">
-                  <h2>{id}</h2>
+                  <div className="house-card-header">
+                    <h2>{id}</h2>
+                    <span className={hasReported ? 'status-dot live' : 'status-dot'} />
+                  </div>
 
                   {!hasReported && <div className="waiting">Waiting for data...</div>}
 
                   {data && (
                     <div className="live-readings">
-                      <div>P_G: {data.P_G.toFixed(2)} W</div>
-                      <div>P_D: {data.P_D.toFixed(2)} W</div>
-                      <div>P_avail: {data.P_avail.toFixed(2)} W</div>
-                      <div>Cost: {data.C}</div>
+                      <div>
+                        <span className="result-label">P_G</span>
+                        <span className="result-val">{data.P_G.toFixed(2)} W</span>
+                      </div>
+                      <div>
+                        <span className="result-label">P_D</span>
+                        <span className="result-val">{data.P_D.toFixed(2)} W</span>
+                      </div>
+                      <div>
+                        <span className="result-label">P_avail</span>
+                        <span className="result-val">{data.P_avail.toFixed(2)} W</span>
+                      </div>
+                      <div>
+                        <span className="result-label">Cost</span>
+                        <span className="result-val">{data.C}</span>
+                      </div>
                     </div>
                   )}
 
                   {result && (
                     <div className="house-result">
-                      <div>Surplus: {result.P_surplus.toFixed(2)} W</div>
-                      <div>Allocated: {result.P_alloc.toFixed(2)} W</div>
+                      <div>
+                        <span className="result-label">Surplus</span>
+                        <span className="result-val">{result.P_surplus.toFixed(2)} W</span>
+                      </div>
+                      <div>
+                        <span className="result-label">Allocated</span>
+                        <span className="result-val">{result.P_alloc.toFixed(2)} W</span>
+                      </div>
                       {result.P_surplus > 0 ? (
                         <div className="deficit-moot">
                           Local deficit: {result.P_local_deficit.toFixed(2)} W (moot — surplus covers demand, battery not used)
                         </div>
                       ) : (
-                        <div>Local deficit: {result.P_local_deficit.toFixed(2)} W</div>
+                        <div>
+                          <span className="result-label">Local deficit</span>
+                          <span className="result-val">{result.P_local_deficit.toFixed(2)} W</span>
+                        </div>
                       )}
                     </div>
                   )}

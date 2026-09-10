@@ -1,12 +1,26 @@
 :root {
   --text: #6b6375;
   --text-h: #08060d;
-  --bg: #fff;
+  --bg: #fdfcff;
+  --bg-soft: #f6f3fb;
   --border: #e5e4e7;
   --code-bg: #f4f3ec;
   --accent: #aa3bff;
+  --accent-hover: #8f1fff;
   --accent-bg: rgba(170, 59, 255, 0.1);
   --accent-border: rgba(170, 59, 255, 0.5);
+  --success: #16a34a;
+  --success-bg: rgba(22, 163, 74, 0.1);
+  --success-border: rgba(22, 163, 74, 0.35);
+  --warning: #d97706;
+  --warning-bg: rgba(217, 119, 6, 0.1);
+  --danger: #dc2626;
+  --danger-bg: rgba(220, 38, 38, 0.08);
+  --card-bg: #ffffff;
+  --card-shadow:
+    0 1px 2px rgba(8, 6, 13, 0.04), 0 8px 24px -12px rgba(8, 6, 13, 0.12);
+  --card-shadow-hover:
+    0 2px 4px rgba(8, 6, 13, 0.05), 0 16px 40px -12px rgba(8, 6, 13, 0.18);
   --social-bg: rgba(244, 243, 236, 0.5);
   --shadow:
     rgba(0, 0, 0, 0.1) 0 10px 15px -3px, rgba(0, 0, 0, 0.05) 0 4px 6px -2px;
@@ -15,7 +29,7 @@
   --heading: system-ui, 'Segoe UI', Roboto, sans-serif;
   --mono: ui-monospace, Consolas, monospace;
 
-  font: 18px/145% var(--sans);
+  font: 17px/145% var(--sans);
   letter-spacing: 0.18px;
   color-scheme: light dark;
   color: var(--text);
@@ -34,12 +48,25 @@
   :root {
     --text: #9ca3af;
     --text-h: #f3f4f6;
-    --bg: #16171d;
+    --bg: #121317;
+    --bg-soft: #1a1c23;
     --border: #2e303a;
     --code-bg: #1f2028;
     --accent: #c084fc;
+    --accent-hover: #d8b4fe;
     --accent-bg: rgba(192, 132, 252, 0.15);
     --accent-border: rgba(192, 132, 252, 0.5);
+    --success: #4ade80;
+    --success-bg: rgba(74, 222, 128, 0.12);
+    --success-border: rgba(74, 222, 128, 0.35);
+    --warning: #fbbf24;
+    --danger: #f87171;
+    --danger-bg: rgba(248, 113, 113, 0.1);
+    --card-bg: #1b1d24;
+    --card-shadow:
+      0 1px 2px rgba(0, 0, 0, 0.3), 0 8px 24px -12px rgba(0, 0, 0, 0.6);
+    --card-shadow-hover:
+      0 2px 4px rgba(0, 0, 0, 0.35), 0 16px 40px -12px rgba(0, 0, 0, 0.7);
     --social-bg: rgba(47, 48, 58, 0.5);
     --shadow:
       rgba(0, 0, 0, 0.4) 0 10px 15px -3px, rgba(0, 0, 0, 0.25) 0 4px 6px -2px;
@@ -50,8 +77,22 @@
   }
 }
 
+html {
+  scroll-behavior: smooth;
+}
+
 body {
   margin: 0;
+  min-height: 100svh;
+  background:
+    radial-gradient(1200px 600px at 50% -10%, var(--accent-bg), transparent 60%),
+    var(--bg);
+  background-attachment: fixed;
+}
+
+::selection {
+  background: var(--accent-border);
+  color: var(--text-h);
 }
 
 #root {
@@ -67,10 +108,12 @@ body {
 }
 
 h1,
-h2 {
+h2,
+h3 {
   font-family: var(--heading);
-  font-weight: 500;
+  font-weight: 600;
   color: var(--text-h);
+  letter-spacing: -0.02em;
 }
 
 h1 {
