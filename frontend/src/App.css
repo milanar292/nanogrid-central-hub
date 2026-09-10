@@ -1,0 +1,27 @@
+.mode-toggle {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.mode-btn {
+  padding: 8px 16px;
+  cursor: pointer;
+}
+
+.mode-btn.active {
+  font-weight: bold;
+  border: 2px solid currentColor;
+}
+
+.waiting {
+  opacity: 0.6;
+  font-style: italic;
+  margin-top: 8px;
+}
+
+.live-readings {
+  margin-top: 8px;
+  font-size: 0.9em;
+}
