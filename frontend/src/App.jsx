@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
+import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts'
 import './App.css'
 
 const initialHouses = [
@@ -52,6 +53,7 @@ function App() {
   const [liveReported, setLiveReported] = useState([])
   const [liveError, setLiveError] = useState(null)
   const [lastUpdated, setLastUpdated] = useState(null)
+  const [history, setHistory] = useState([])
   const pollRef = useRef(null)
 
   useEffect(() => {
@@ -70,6 +72,19 @@ function App() {
         setLiveReported(data.reported || [])
         setLiveError(null)
         setLastUpdated(new Date())
+        const r = data.results || {}
+        setHistory((prev) =>
+          [
+            ...prev,
+            {
+              time: new Date().toLocaleTimeString(),
+              H1: r.H1?.P_alloc,
+              H2: r.H2?.P_alloc,
+              H3: r.H3?.P_alloc,
+              H4: r.H4?.P_alloc,
+            },
+          ].slice(-20),
+        )
       } catch (err) {
         setLiveError(err.message)
       }
@@ -266,6 +281,31 @@ function App() {
                 </div>
               )
             })}
+          </div>
+
+          <div className="history-chart">
+            <h2>Allocation History</h2>
+            <ResponsiveContainer width="100%" height={280}>
+              <LineChart data={history} margin={{ top: 8, right: 16, left: 0, bottom: 0 }}>
+                <CartesianGrid stroke="#2e303a" strokeDasharray="3 3" />
+                <XAxis dataKey="time" stroke="#9ca3af" fontSize={12} tickMargin={8} />
+                <YAxis stroke="#9ca3af" fontSize={12} tickMargin={8} />
+                <Tooltip
+                  contentStyle={{
+                    background: '#1b1d24',
+                    border: '1px solid #2e303a',
+                    borderRadius: 10,
+                    color: '#f3f4f6',
+                  }}
+                  labelStyle={{ color: '#f3f4f6' }}
+                />
+                <Legend />
+                <Line type="monotone" dataKey="H1" stroke="#c084fc" dot={false} strokeWidth={2} isAnimationActive={false} />
+                <Line type="monotone" dataKey="H2" stroke="#4ade80" dot={false} strokeWidth={2} isAnimationActive={false} />
+                <Line type="monotone" dataKey="H3" stroke="#fbbf24" dot={false} strokeWidth={2} isAnimationActive={false} />
+                <Line type="monotone" dataKey="H4" stroke="#38bdf8" dot={false} strokeWidth={2} isAnimationActive={false} />
+              </LineChart>
+            </ResponsiveContainer>
           </div>
         </>
       )}

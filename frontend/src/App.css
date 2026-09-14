@@ -326,6 +326,24 @@
   color: var(--accent);
 }
 
+/* ---- Allocation history chart ---- */
+
+.history-chart {
+  margin-top: 20px;
+  padding: 20px;
+  text-align: left;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  box-shadow: var(--card-shadow);
+}
+
+.history-chart h2 {
+  margin: 0 0 12px;
+  color: var(--accent);
+  font-weight: 700;
+}
+
 /* ---- Action button ---- */
 
 .run-btn {
