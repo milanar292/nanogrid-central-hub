@@ -27,7 +27,10 @@ class HouseResult(BaseModel):
     id: str
     P_surplus: float
     P_alloc: float
+    P_recv: float = 0.0    # power RECEIVED by this house, W
     P_local_deficit: float
+    P_supply: float = 0.0   # battery power drawn FROM this house, W
+    P_stored: float = 0.0   # surplus energy stored in this house's battery, W
 
 
 # ---- Core Algorithm 2 logic, reusable by both manual and hardware endpoints ----
@@ -42,26 +45,37 @@ def run_allocation(houses: List[HouseData]) -> List[HouseResult]:
     P_G_total = sum(h.P_G for h in houses)
     P_D_total = sum(h.P_D for h in houses)
     delta_total = P_G_total - P_D_total
+    total_surplus = sum(surplus.values())
+    total_deficit = sum(max(0.0, h.P_D - h.P_G) for h in houses)
 
     results = []
 
     if delta_total >= 0:
-        # Line 8-10: network sharing covers everything
+        # Network sharing covers everything, no battery discharge needed.
+        # Excess energy beyond all deficits is stored proportionally to surplus.
+        excess = total_surplus - total_deficit
         for h in houses:
+            if total_surplus > 0:
+                p_stored = (surplus[h.id] / total_surplus) * excess
+            else:
+                p_stored = 0.0
             results.append(HouseResult(
                 id=h.id,
                 P_surplus=surplus[h.id],
                 P_alloc=0.0,
-                P_local_deficit=0.0
+                P_recv=max(0.0, h.P_D - h.P_G),
+                P_local_deficit=0.0,
+                P_supply=0.0,
+                P_stored=p_stored
             ))
         return results
 
-    # Line 11-12: there's a global deficit
-    P_req = -delta_total
+    # total_surplus < total_deficit: global deficit
+    P_req = total_deficit - total_surplus
     P_available = sum(h.P_avail for h in houses)
 
     if P_available >= P_req:
-        # Line 13-16: battery sufficient -> minimize cost, greedy by cheapest C first
+        # Battery sufficient -> minimize cost, greedy by cheapest C first
         alloc = {h.id: 0.0 for h in houses}
         remaining = P_req
         for h in sorted(houses, key=lambda x: x.C):
@@ -70,25 +84,27 @@ def run_allocation(houses: List[HouseData]) -> List[HouseResult]:
             take = min(h.P_avail, remaining)
             alloc[h.id] = take
             remaining -= take
+    else:
+        # Battery insufficient -> every battery fully drawn
+        alloc = {h.id: h.P_avail for h in houses}
 
-        for h in houses:
-            results.append(HouseResult(
-                id=h.id,
-                P_surplus=surplus[h.id],
-                P_alloc=alloc[h.id],
-                P_local_deficit=0.0
-            ))
-        return results
+    total_drawn = sum(alloc.values())
+    supply = total_surplus + total_drawn
 
-    # Line 17-22: battery insufficient -> proportional demand-share allocation
     for h in houses:
-        share = h.P_D / P_D_total if P_D_total > 0 else 0.0
-        p_alloc = share * P_available
+        deficit_i = max(0.0, h.P_D - h.P_G)
+        if deficit_i > 0:
+            p_recv = (deficit_i / total_deficit) * supply
+        else:
+            p_recv = 0.0
         results.append(HouseResult(
             id=h.id,
             P_surplus=surplus[h.id],
-            P_alloc=p_alloc,
-            P_local_deficit=h.P_D - p_alloc
+            P_alloc=alloc[h.id],
+            P_recv=p_recv,
+            P_local_deficit=deficit_i - p_recv,
+            P_supply=alloc[h.id],
+            P_stored=0.0
         ))
     return results
 
@@ -128,7 +144,7 @@ def submit_house_data(house_id: str, data: HouseData):
 @app.get("/houses/{house_id}/result", response_model=HouseResult)
 def get_house_result(house_id: str):
     if house_id not in house_results_store:
-        return {"id": house_id, "P_surplus": 0.0, "P_alloc": 0.0, "P_local_deficit": 0.0}
+        return {"id": house_id, "P_surplus": 0.0, "P_alloc": 0.0, "P_recv": 0.0, "P_local_deficit": 0.0, "P_supply": 0.0, "P_stored": 0.0}
     return house_results_store[house_id]
 
 

@@ -174,19 +174,21 @@ function App() {
                         <span className="result-val">{result.P_surplus.toFixed(2)} W</span>
                       </div>
                       <div>
-                        <span className="result-label">Allocated</span>
+                        <span className="result-label">Drawn from battery</span>
                         <span className="result-val">{result.P_alloc.toFixed(2)} W</span>
                       </div>
-                      {result.P_surplus > 0 ? (
-                        <div className="deficit-moot">
-                          Local deficit: {result.P_local_deficit.toFixed(2)} W (moot — surplus covers demand, battery not used)
-                        </div>
-                      ) : (
-                        <div>
-                          <span className="result-label">Local deficit</span>
-                          <span className="result-val">{result.P_local_deficit.toFixed(2)} W</span>
-                        </div>
-                      )}
+                      <div>
+                        <span className="result-label">Received</span>
+                        <span className="result-val">{(result.P_recv ?? 0).toFixed(2)} W</span>
+                      </div>
+                      <div>
+                        <span className="result-label">Stored in battery</span>
+                        <span className="result-val">{(result.P_stored ?? 0).toFixed(2)} W</span>
+                      </div>
+                      <div>
+                        <span className="result-label">Local deficit</span>
+                        <span className="result-val">{result.P_local_deficit.toFixed(2)} W</span>
+                      </div>
                     </div>
                   )}
                 </div>
@@ -259,19 +261,21 @@ function App() {
                         <span className="result-val">{result.P_surplus.toFixed(2)} W</span>
                       </div>
                       <div>
-                        <span className="result-label">Allocated</span>
+                        <span className="result-label">Drawn from battery</span>
                         <span className="result-val">{result.P_alloc.toFixed(2)} W</span>
                       </div>
-                      {result.P_surplus > 0 ? (
-                        <div className="deficit-moot">
-                          Local deficit: {result.P_local_deficit.toFixed(2)} W (moot — surplus covers demand, battery not used)
-                        </div>
-                      ) : (
-                        <div>
-                          <span className="result-label">Local deficit</span>
-                          <span className="result-val">{result.P_local_deficit.toFixed(2)} W</span>
-                        </div>
-                      )}
+                      <div>
+                        <span className="result-label">Received</span>
+                        <span className="result-val">{(result.P_recv ?? 0).toFixed(2)} W</span>
+                      </div>
+                      <div>
+                        <span className="result-label">Stored in battery</span>
+                        <span className="result-val">{(result.P_stored ?? 0).toFixed(2)} W</span>
+                      </div>
+                      <div>
+                        <span className="result-label">Local deficit</span>
+                        <span className="result-val">{result.P_local_deficit.toFixed(2)} W</span>
+                      </div>
                     </div>
                   )}
 
