@@ -6,6 +6,7 @@ Run from the backend folder:
 
 Reads house data from nanogrid/house/{H1..H4}/data (QoS 1) and publishes the
 allocation results to nanogrid/house/{H1..H4}/result (QoS 1, not retained).
+It also POSTs each house's data to the FastAPI backend so the dashboard updates.
 
 Settings come from environment variables:
     MQTT_HOST       (default 127.0.0.1)
@@ -14,12 +15,14 @@ Settings come from environment variables:
     MQTT_PASS       (default empty)
     MQTT_TLS        (default false; "true" enables TLS with system CA certs)
     STALE_SECONDS   (default 10)
+    BACKEND_URL     (default http://127.0.0.1:8000)
 """
 
 import json
 import os
 import sys
 import time
+import urllib.request
 
 import paho.mqtt.client as mqtt
 from paho.mqtt.enums import CallbackAPIVersion
@@ -38,6 +41,7 @@ MQTT_USER = os.environ.get("MQTT_USER", "")
 MQTT_PASS = os.environ.get("MQTT_PASS", "")
 MQTT_TLS = os.environ.get("MQTT_TLS", "false").strip().lower() == "true"
 STALE_SECONDS = float(os.environ.get("STALE_SECONDS", "10"))
+BACKEND_URL = os.environ.get("BACKEND_URL", "http://127.0.0.1:8000")
 
 DATA_TOPIC = "nanogrid/house/+/data"
 RESULT_TOPIC = "nanogrid/house/{id}/result"
@@ -109,8 +113,10 @@ def _handle_message(client, msg):
         else:
             values[field] = default
 
+    seq = _as_number(payload.get("seq"))
     record = {"id": house_id}
     record.update(values)
+    record["seq"] = int(seq) if seq is not None else None
     latest[house_id] = record
     received_at[house_id] = time.monotonic()
 
@@ -128,6 +134,30 @@ def _handle_message(client, msg):
         return
 
     _publish_results(client)
+
+
+def _forward_to_backend(houses):
+    """POST each house's data to the FastAPI backend so the dashboard updates."""
+    for h in houses:
+        body = json.dumps({
+            "id": h.id,
+            "P_G": h.P_G,
+            "P_D": h.P_D,
+            "P_avail": h.P_avail,
+            "C": h.C,
+        }).encode("utf-8")
+        req = urllib.request.Request(
+            f"{BACKEND_URL}/houses/{h.id}/data",
+            data=body,
+            headers={"Content-Type": "application/json"},
+            method="POST",
+        )
+        try:
+            urllib.request.urlopen(req, timeout=2).close()
+        except Exception as exc:
+            print(f"[bridge] backend POST failed for {h.id}: {exc}")
+            return
+    print("[bridge] forwarded data to backend")
 
 
 def _publish_results(client):
@@ -164,6 +194,8 @@ def _publish_results(client):
         else:
             doc = result.dict()
         doc["ts"] = ts
+        doc["ready"] = True
+        doc["seq"] = latest[result.id].get("seq")
         client.publish(
             RESULT_TOPIC.format(id=result.id),
             json.dumps(doc),
@@ -172,6 +204,8 @@ def _publish_results(client):
         )
         published.append(result.id)
     print(f"[bridge] published results for {', '.join(published)} (ts={ts})")
+
+    _forward_to_backend(houses)
 
 
 def on_connect(client, userdata, flags, reason_code, properties):
