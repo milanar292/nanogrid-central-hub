@@ -410,3 +410,22 @@
     width: 100%;
   }
 }
+/* ---- Battery / tags ---- */
+.card-tags { display: flex; align-items: center; gap: 8px; }
+.tag { font-size: 0.72em; font-weight: 700; padding: 2px 8px; border-radius: 999px; text-transform: uppercase; letter-spacing: 0.04em; }
+.tag.dummy { background: var(--accent-bg); color: var(--accent); }
+.tag.stale { background: var(--warning-bg); color: var(--warning); }
+.battery-block { display: grid; gap: 8px; padding: 12px; font-family: var(--mono); font-size: 0.9em; color: var(--text-h); background: var(--bg-soft); border: 1px solid var(--border); border-radius: 10px; }
+.battery-head { display: flex; align-items: baseline; gap: 8px; }
+.battery-head .result-val { font-weight: 700; }
+.battery-state { margin-left: auto; font-size: 0.8em; font-weight: 700; text-transform: uppercase; }
+.battery-state.charging { color: var(--success); }
+.battery-state.discharging { color: var(--warning); }
+.battery-state.idle { color: var(--text); }
+.soc-bar { position: relative; height: 10px; border-radius: 6px; background: var(--border); overflow: hidden; }
+.soc-fill { height: 100%; background: var(--success); transition: width 0.4s ease; }
+.soc-mark { position: absolute; top: 0; bottom: 0; width: 2px; background: var(--text-h); opacity: 0.6; }
+.battery-rows { display: grid; gap: 6px; }
+.battery-rows div { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.battery-rows .result-label { font-family: var(--sans); font-size: 0.82em; font-weight: 600; color: var(--text); text-transform: uppercase; letter-spacing: 0.04em; }
+.battery-rows .result-val { font-weight: 600; white-space: nowrap; }
