@@ -11,9 +11,9 @@ HOST = "127.0.0.1"
 PORT = 1883
 
 HOUSES = {
-    "H2": {"P_G": 100, "P_D": 40, "P_avail": 40, "C": 12, "soc_pct": 60, "capacity_Wh": 100},  # surplus house
+    "H2": {"P_G": 100, "P_D": 40, "P_avail": 40, "C": 12, "soc_pct": 20, "capacity_Wh": 100},  # surplus house
     "H3": {"P_G": 30,  "P_D": 60, "P_avail": 20, "C": 8,  "soc_pct": 40, "capacity_Wh": 100},  # deficit house
-    "H4": {"P_G": 50,  "P_D": 50, "P_avail": 30, "C": 15, "soc_pct": 50, "capacity_Wh": 100},  # balanced house
+    "H4": {"P_G": 50,  "P_D": 50, "P_avail": 30, "C": 15, "soc_pct": 20, "capacity_Wh": 100},  # balanced house
 }
 
 client = mqtt.Client(callback_api_version=CallbackAPIVersion.VERSION2,

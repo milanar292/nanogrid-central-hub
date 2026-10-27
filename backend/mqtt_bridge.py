@@ -47,16 +47,29 @@ DATA_TOPIC = "nanogrid/house/+/data"
 RESULT_TOPIC = "nanogrid/house/{id}/result"
 
 HOUSE_IDS = ("H1", "H2", "H3", "H4")
-REQUIRED_FIELDS = ("P_G", "P_D", "P_avail", "C")
-OPTIONAL_FIELDS = (("soc_pct", 50.0), ("capacity_Wh", 1000.0))
+# P_avail is only required when the house does NOT send soc_pct
+# (with soc_pct, the hub computes charge/discharge limits itself).
+REQUIRED_FIELDS = ("P_G", "P_D", "C")
+OPTIONAL_FIELDS = (("soc_pct", None), ("capacity_Wh", 30.0), ("P_avail", 0.0))
 
 # Only forward the optional fields that run_allocation's input model accepts.
 _MODEL_FIELDS = set(getattr(HouseData, "model_fields", {}).keys())
-FORWARDED_FIELDS = tuple(name for name, _ in OPTIONAL_FIELDS if name in _MODEL_FIELDS)
+FORWARDED_FIELDS = tuple(name for name in ("soc_pct", "capacity_Wh", "rtc", "loads") if name in _MODEL_FIELDS)
 
 latest: dict = {}        # house id -> last valid input payload
 received_at: dict = {}   # house id -> monotonic receive time
 last_missing_log = 0.0
+
+# Houses that are not real yet. Their fixed values are used instead of MQTT data.
+# Change these numbers to test other cases.
+DUMMY_HOUSES = {
+    "H2": {"P_G": 80.0, "P_D": 80.0, "P_avail": 20.0, "C": 1.0, "soc_pct": 20.0},
+    "H3": {"P_G": 80.0, "P_D": 80.0, "P_avail": 20.0, "C": 1.0, "soc_pct": 40.0},
+    "H4": {"P_G": 80.0, "P_D": 80.0, "P_avail": 20.0, "C": 1.0, "soc_pct": 20.0},
+}
+for _hid, _vals in DUMMY_HOUSES.items():
+    latest[_hid] = {"id": _hid, "seq": None, "soc_pct": None, "capacity_Wh": 30.0,
+                    "rtc": None, "loads": None, **_vals}
 
 
 def _as_number(value):
@@ -113,6 +126,19 @@ def _handle_message(client, msg):
         else:
             values[field] = default
 
+    if values["soc_pct"] is None and "P_avail" not in payload:
+        print(f"[bridge] {house_id}: need either 'soc_pct' or 'P_avail'")
+        return
+
+    # Optional pass-through fields for the dashboard
+    rtc = payload.get("rtc")
+    values["rtc"] = rtc if isinstance(rtc, str) else None
+    loads = payload.get("loads")
+    if isinstance(loads, dict):
+        values["loads"] = {str(k): n for k, v in loads.items() if (n := _as_number(v)) is not None}
+    else:
+        values["loads"] = None
+
     seq = _as_number(payload.get("seq"))
     record = {"id": house_id}
     record.update(values)
@@ -124,7 +150,8 @@ def _handle_message(client, msg):
     stale = [
         hid
         for hid in HOUSE_IDS
-        if hid not in received_at or now - received_at[hid] >= STALE_SECONDS
+        if hid not in DUMMY_HOUSES
+        and (hid not in received_at or now - received_at[hid] >= STALE_SECONDS)
     ]
     if stale:
         global last_missing_log
@@ -139,13 +166,7 @@ def _handle_message(client, msg):
 def _forward_to_backend(houses):
     """POST each house's data to the FastAPI backend so the dashboard updates."""
     for h in houses:
-        body = json.dumps({
-            "id": h.id,
-            "P_G": h.P_G,
-            "P_D": h.P_D,
-            "P_avail": h.P_avail,
-            "C": h.C,
-        }).encode("utf-8")
+        body = json.dumps(h.model_dump() if hasattr(h, "model_dump") else h.dict()).encode("utf-8")
         req = urllib.request.Request(
             f"{BACKEND_URL}/houses/{h.id}/data",
             data=body,
@@ -164,7 +185,10 @@ def _publish_results(client):
     houses = []
     for hid in HOUSE_IDS:
         data = latest[hid]
-        kwargs = {name: data[name] for name in FORWARDED_FIELDS}
+        kwargs = {name: data.get(name) for name in FORWARDED_FIELDS}
+        kwargs["source"] = "dummy" if hid in DUMMY_HOUSES else "live"
+        if kwargs.get("soc_pct") is None:
+            kwargs.pop("soc_pct", None)
         try:
             houses.append(
                 HouseData(
